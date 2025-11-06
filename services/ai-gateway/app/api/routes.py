@@ -42,7 +42,7 @@ async def create_chat_completion(
 
     provider = _normalize_provider(chat_request.provider)
 
-    if provider not in {"openai", "anthropic"}:
+    if provider not in {"openai", "anthropic", "vanchin"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Provider '{provider}' is not supported by the gateway",
@@ -93,6 +93,8 @@ def _normalize_provider(value: str) -> str:
         return "anthropic"
     if mapped in {"azure", "azure-openai"}:
         return "azure-openai"
+    if mapped in {"vanchin", "streamlake", "vanchinai"}:
+        return "vanchin"
     return "openai" if mapped == "custom" else mapped
 
 
@@ -104,6 +106,8 @@ async def _select_completion_callable(
 ) -> dict[str, Any]:
     if provider == "anthropic":
         return await _anthropic_completion(api_key, chat_request, settings)
+    if provider == "vanchin":
+        return await _vanchin_completion(api_key, chat_request, settings)
     return await _openai_completion(api_key, chat_request, settings)
 
 
@@ -115,6 +119,8 @@ def _select_stream_callable(
 ) -> AsyncIterator[bytes]:
     if provider == "anthropic":
         return _anthropic_stream(api_key, chat_request, settings)
+    if provider == "vanchin":
+        return _vanchin_stream(api_key, chat_request, settings)
     return _openai_stream(api_key, chat_request, settings)
 
 
@@ -256,6 +262,56 @@ async def _anthropic_stream(
                 raise HTTPException(
                     status_code=response.status_code,
                     detail=body.decode("utf-8", errors="ignore") or "Upstream Anthropic error",
+                )
+
+            async for chunk in response.aiter_bytes():
+                yield chunk
+
+
+# VanchinAI functions (OpenAI-compatible API)
+async def _vanchin_completion(api_key: str, chat_request: ChatRequest, settings: Settings) -> dict[str, Any]:
+    """VanchinAI completion using OpenAI SDK format."""
+    url = settings.vanchin_api_base.rstrip("/") + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    timeout = httpx.Timeout(30.0, connect=10.0, read=60.0)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        response = await client.post(url, headers=headers, json=_build_openai_payload(chat_request))
+
+    if response.status_code in {401, 403}:
+        raise ProviderAuthenticationError(response.text or "Unauthorized")
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=response.text or "Upstream VanchinAI error")
+
+    return response.json()
+
+
+async def _vanchin_stream(
+    api_key: str,
+    chat_request: ChatRequest,
+    settings: Settings,
+) -> AsyncIterator[bytes]:
+    """VanchinAI streaming using OpenAI SDK format."""
+    url = settings.vanchin_api_base.rstrip("/") + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    timeout = httpx.Timeout(60.0, connect=10.0, read=None)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("POST", url, headers=headers, json=_build_openai_payload(chat_request)) as response:
+            if response.status_code in {401, 403}:
+                body = await response.aread()
+                raise ProviderAuthenticationError(body.decode("utf-8", errors="ignore") or "Unauthorized")
+            if response.status_code >= 400:
+                body = await response.aread()
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=body.decode("utf-8", errors="ignore") or "Upstream VanchinAI error",
                 )
 
             async for chunk in response.aiter_bytes():
