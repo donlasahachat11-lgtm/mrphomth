@@ -269,3 +269,74 @@ export async function updateUserProfile(
   if (error) throw error;
   return data;
 }
+
+// CLI Sessions (service role operations)
+
+interface UpsertCliSessionParams {
+  sessionToken: string;
+  userId: string;
+  machineId?: string | null;
+  projectDirectory?: string | null;
+  version?: string | null;
+  status?: 'connected' | 'disconnected';
+}
+
+export async function upsertCliSession({
+  sessionToken,
+  userId,
+  machineId,
+  projectDirectory,
+  version,
+  status = 'connected',
+}: UpsertCliSessionParams) {
+  const serviceSupabase = createServiceRoleSupabaseClient();
+
+  const { error } = await serviceSupabase
+    .from('cli_sessions')
+    .upsert(
+      {
+        session_token: sessionToken,
+        user_id: userId,
+        machine_id: machineId ?? null,
+        project_directory: projectDirectory ?? null,
+        version: version ?? null,
+        status,
+        connected_at: new Date().toISOString(),
+        last_seen_at: new Date().toISOString(),
+      },
+      { onConflict: 'session_token' },
+    );
+
+  if (error) {
+    throw new Error(`Failed to upsert CLI session: ${error.message}`);
+  }
+}
+
+export async function markCliSessionHeartbeat(sessionToken: string) {
+  const serviceSupabase = createServiceRoleSupabaseClient();
+
+  const { error } = await serviceSupabase
+    .from('cli_sessions')
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq('session_token', sessionToken);
+
+  if (error) {
+    throw new Error(`Failed to update CLI session heartbeat: ${error.message}`);
+  }
+}
+
+export async function markCliSessionDisconnected(sessionToken: string) {
+  const serviceSupabase = createServiceRoleSupabaseClient();
+
+  const { error } = await serviceSupabase
+    .from('cli_sessions')
+    .update({
+      status: 'disconnected',
+      last_seen_at: new Date().toISOString(),
+    })
+    .eq('session_token', sessionToken);
+
+  if (error) {
+    throw new Error(`Failed to mark CLI session disconnected: ${error.message}`);
+  }
+}
