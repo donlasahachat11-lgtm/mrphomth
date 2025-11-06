@@ -1,0 +1,27 @@
+{
+  "name": "@mrpromth/cli",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local agent runner CLI for Mr.Promth",
+  "bin": {
+    "mr-promth": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --sourcemap --clean",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/prompts": "^2.4.9",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.6.3"
+  }
+}

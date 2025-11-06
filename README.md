@@ -121,6 +121,7 @@ STREAMLAKE_API_KEY=your-streamlake-api-key-here
 mrphomth-main/
 ├── app/                    # Next.js app directory
 ├── components/            # Reusable React components
+├── cli/                   # Mr.Promth local agent runner CLI
 ├── services/             # Backend services
 │   └── ai-gateway/       # Python FastAPI gateway
 ├── database/             # Database migrations
@@ -130,6 +131,42 @@ mrphomth-main/
 ├── .env.local           # Next.js environment variables
 └── services/ai-gateway/.env  # Gateway environment variables
 ```
+
+## 🧰 Local CLI (mr-promth)
+
+The `cli/` directory contains the local agent runner used to authenticate with Supabase and connect your machine to the Mr.Promth agent chain.
+
+### Install & Build
+
+```bash
+cd cli
+npm install
+npm run build
+```
+
+### Authenticate
+
+```bash
+# Interactive login (prompts for email & password)
+node dist/index.js login
+
+# Provide credentials via flags (use with caution, command history will include the password)
+node dist/index.js login --email user@example.com --password "your-password"
+
+# Override Supabase credentials if needed
+node dist/index.js login --supabase-url https://xyzcompany.supabase.co --supabase-key your-anon-key
+```
+
+Successful authentication stores a session token in `~/.mrpromth/config.json`, along with your preferred API endpoint and working directory. The CLI reads Supabase credentials from the config file or from environment variables (`MRPROMTH_SUPABASE_URL`, `MRPROMTH_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+
+### Development Mode
+
+```bash
+# Run the CLI directly from TypeScript sources
+npm run dev -- login
+```
+
+> `mr-promth connect` and other orchestration commands will be added in upcoming iterations following the implementation roadmap.
 
 ## 🛠️ Scripts
 
