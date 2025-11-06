@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { LogOut, MessageSquareText, Sparkles, SquarePen } from "lucide-react";
+import { CircleUser, LayoutDashboard, LogOut, MessageSquareText, Sparkles, SquarePen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 const navigation = [
+  { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
   { name: "Chat", href: "/app/chat/default", icon: MessageSquareText },
   { name: "Prompts", href: "/app/prompts", icon: SquarePen },
   { name: "Workflows", href: "#", icon: Sparkles, disabled: true },
@@ -14,15 +15,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[16rem_1fr_22rem]">
       <aside className="hidden border-r border-border bg-muted/40 lg:flex lg:flex-col">
-        <div className="flex items-center justify-between px-5 py-6">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Workspace</p>
-            <p className="text-lg font-semibold">Mr.Prompt</p>
+          <div className="flex items-center justify-between px-6 py-6">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Workspace</p>
+              <p className="text-xl font-semibold text-foreground">Mr.Promth Console</p>
+            </div>
+            <Button variant="ghost" size="icon" aria-label="Sign out">
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Sign out">
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
         <nav className="flex-1 space-y-1 px-3">
           {navigation.map((item) => {
             const Icon = item.icon;
@@ -33,8 +34,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 aria-disabled={item.disabled}
                 className="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/80 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
               >
-                <Icon className="h-5 w-5 text-muted-foreground" />
-                {item.name}
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="font-medium text-foreground">{item.name}</span>
               </Link>
             );
           })}
@@ -46,15 +51,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-background/80 px-5 backdrop-blur">
-          <div>
-            <h1 className="text-lg font-semibold">Command Center</h1>
-            <p className="text-sm text-muted-foreground">Manage prompts, sessions, and AI connections.</p>
-          </div>
-          <Button variant="secondary" size="sm">
-            New Session
-          </Button>
+        <main className="flex flex-col">
+          <header className="flex h-24 items-center justify-between border-b border-border bg-background/80 px-8 backdrop-blur">
+            <div className="flex items-center gap-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/30">
+                MP
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">Mr.Promth</p>
+                <h1 className="text-2xl font-semibold text-foreground">From Prompt to Production</h1>
+                <p className="text-sm text-muted-foreground">Transform any idea into a production-ready experience.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-sm font-semibold text-foreground">Aimee Promth</p>
+                <p className="text-xs text-muted-foreground">Product Designer</p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20 text-secondary">
+                <CircleUser className="h-6 w-6" />
+              </div>
+              <Button variant="outline" size="sm">
+                Logout
+              </Button>
+            </div>
         </header>
         <div className="flex-1 overflow-y-auto bg-background px-5 py-6">{children}</div>
       </main>
