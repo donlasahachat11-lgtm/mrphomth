@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 
+import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
 
 async function main() {
@@ -13,6 +14,7 @@ async function main() {
     .version("0.1.0");
 
   registerLoginCommand(program);
+  registerConnectCommand(program);
 
   await program.parseAsync(process.argv);
 }

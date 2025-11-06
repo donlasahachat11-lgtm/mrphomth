@@ -159,6 +159,18 @@ node dist/index.js login --supabase-url https://xyzcompany.supabase.co --supabas
 
 Successful authentication stores a session token in `~/.mrpromth/config.json`, along with your preferred API endpoint and working directory. The CLI reads Supabase credentials from the config file or from environment variables (`MRPROMTH_SUPABASE_URL`, `MRPROMTH_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
 
+### Connect to the Agent Orchestrator
+
+```bash
+# Connect using saved configuration
+node dist/index.js connect
+
+# Override WebSocket endpoint / project directory
+node dist/index.js connect --api-url ws://localhost:3000/api/ws --project-dir ~/projects/demo
+```
+
+`connect` establishes a persistent WebSocket session with the backend orchestrator, streams command output in real-time, and executes tool commands (`writeFile`, `readFile`, `runCommand`) inside the configured project directory. Use `--reconnect` to enable automatic reconnection.
+
 ### Development Mode
 
 ```bash
@@ -166,7 +178,7 @@ Successful authentication stores a session token in `~/.mrpromth/config.json`, a
 npm run dev -- login
 ```
 
-> `mr-promth connect` and other orchestration commands will be added in upcoming iterations following the implementation roadmap.
+> Additional tooling (`mr-promth connect` subcommands for session diagnostics, deployment helpers, etc.) will follow as the orchestrator matures.
 
 ## 🛠️ Scripts
 
