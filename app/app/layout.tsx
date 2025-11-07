@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard" },
+  { name: "Projects", href: "/app/projects" },
   { name: "Chat", href: "/app/chat/default" },
   { name: "Prompts", href: "/app/prompts" },
+  { name: "Billing", href: "/app/billing" },
+  { name: "Settings", href: "/app/settings" },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
