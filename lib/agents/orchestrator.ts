@@ -4,9 +4,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { executeAgent1 } from "./agent1";
 import { executeAgent2 } from "./agent2";
+import { executeAgent3 } from "./agent3";
+import { executeAgent4 } from "./agent4";
+import { executeAgent5 } from "./agent5";
+import { executeAgent6 } from "./agent6";
+import { executeAgent7 } from "./agent7";
 import type {
   Agent1Output,
   Agent2Output,
+  Agent3Output,
+  Agent4Output,
+  Agent5Output,
+  Agent6Output,
+  Agent7Output,
   AgentChainResultPayload,
 } from "./types";
 
@@ -68,26 +78,56 @@ const AGENTS: AgentDefinition[] = [
     number: 3,
     name: "Database & Backend Developer",
     key: "agent3_output",
+    run: async ({ outputs }) => {
+      if (!outputs.agent2_output) {
+        throw new Error("Agent 3 requires Agent 2 output but none was found");
+      }
+      return executeAgent3(outputs.agent2_output);
+    },
   },
   {
     number: 4,
     name: "Frontend Component Developer",
     key: "agent4_output",
+    run: async ({ outputs }) => {
+      if (!outputs.agent2_output || !outputs.agent3_output) {
+        throw new Error("Agent 4 requires Agent 2 and 3 outputs but some were missing");
+      }
+      return executeAgent4(outputs.agent2_output, outputs.agent3_output);
+    },
   },
   {
     number: 5,
     name: "Integration & Logic Developer",
     key: "agent5_output",
+    run: async ({ outputs }) => {
+      if (!outputs.agent2_output || !outputs.agent3_output || !outputs.agent4_output) {
+        throw new Error("Agent 5 requires Agent 2, 3, and 4 outputs but some were missing");
+      }
+      return executeAgent5(outputs.agent2_output, outputs.agent3_output, outputs.agent4_output);
+    },
   },
   {
     number: 6,
     name: "Testing & Quality Assurance",
     key: "agent6_output",
+    run: async ({ outputs }) => {
+      if (!outputs.agent2_output) {
+        throw new Error("Agent 6 requires Agent 2 output but none was found");
+      }
+      return executeAgent6(outputs.agent2_output);
+    },
   },
   {
     number: 7,
     name: "Optimization & Deployment",
     key: "agent7_output",
+    run: async ({ outputs }) => {
+      if (!outputs.agent2_output) {
+        throw new Error("Agent 7 requires Agent 2 output but none was found");
+      }
+      return executeAgent7(outputs.agent2_output);
+    },
   },
 ];
 
@@ -233,7 +273,22 @@ export class AgentChainOrchestrator {
     const finalResult: AgentChainResult = {
       agent1_output: outputs.agent1_output,
       agent2_output: outputs.agent2_output,
-      final_project: null,
+      agent3_output: outputs.agent3_output,
+      agent4_output: outputs.agent4_output,
+      agent5_output: outputs.agent5_output,
+      agent6_output: outputs.agent6_output,
+      agent7_output: outputs.agent7_output,
+      final_project: {
+        name: outputs.agent1_output.project_name,
+        description: outputs.agent1_output.description,
+        files_generated: (
+          (outputs.agent3_output?.api_routes?.length || 0) +
+          (outputs.agent4_output?.components?.length || 0) +
+          (outputs.agent5_output?.integrations?.length || 0) +
+          (outputs.agent6_output?.test_files?.length || 0) +
+          (outputs.agent7_output?.deployment_config?.config_files?.length || 0)
+        ),
+      },
     };
 
     return finalResult;
@@ -285,7 +340,22 @@ export class AgentChainOrchestrator {
     const result: Partial<AgentChainResult> = {
       agent1_output: outputs.agent1_output,
       agent2_output: outputs.agent2_output,
-      final_project: null,
+      agent3_output: outputs.agent3_output,
+      agent4_output: outputs.agent4_output,
+      agent5_output: outputs.agent5_output,
+      agent6_output: outputs.agent6_output,
+      agent7_output: outputs.agent7_output,
+      final_project: outputs.agent1_output ? {
+        name: outputs.agent1_output.project_name,
+        description: outputs.agent1_output.description,
+        files_generated: (
+          (outputs.agent3_output?.api_routes?.length || 0) +
+          (outputs.agent4_output?.components?.length || 0) +
+          (outputs.agent5_output?.integrations?.length || 0) +
+          (outputs.agent6_output?.test_files?.length || 0) +
+          (outputs.agent7_output?.deployment_config?.config_files?.length || 0)
+        ),
+      } : null,
     };
     return JSON.parse(JSON.stringify(result));
   }
