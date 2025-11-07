@@ -35,7 +35,7 @@ export async function middleware(req: NextRequest) {
   // If user is authenticated and trying to access login/signup pages
   if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup')) {
     // Redirect to app
-    return NextResponse.redirect(new URL('/app', req.url));
+    return NextResponse.redirect(new URL('/app/dashboard', req.url));
   }
 
   return res;
