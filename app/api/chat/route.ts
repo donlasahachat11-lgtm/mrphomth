@@ -244,9 +244,9 @@ async function executeCodeSnippet(code: string): Promise<ToolExecutionResult> {
   sandbox.globalThis = sandbox;
 
   try {
-    const script = new vm.Script(trimmed, { displayErrors: true, filename: "sandboxed-eval.js" });
+    const script = new vm.Script(trimmed, { filename: "sandboxed-eval.js" });
     const context = vm.createContext(sandbox);
-    const result = script.runInContext(context, { timeout: 500, displayErrors: true });
+    const result = script.runInContext(context, { timeout: 500 });
 
     if (typeof result !== "undefined") {
       output.push(`Return value: ${formatValue(result)}`);

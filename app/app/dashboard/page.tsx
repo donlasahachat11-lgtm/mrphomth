@@ -5,6 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgentChainProgress, AgentStep, AgentStepStatus } from '@/components/AgentChainProgress';
 import { PromptInput } from '@/components/PromptInput';
 import { ProjectOutput } from '@/components/ProjectOutput';
+import { BuildMonitor } from '@/components/build-monitor';
+import { ControlPanel } from '@/components/control-panel';
+import { TerminalAccess } from '@/components/terminal-access';
 import type {
   Agent1Output,
   Agent2Output,
@@ -360,6 +363,31 @@ export default function DashboardPage() {
           errorMessage={project?.error_message ?? null}
         />
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BuildMonitor projectId={projectId ?? undefined} />
+        <ControlPanel
+          isRunning={isGenerating}
+          isPaused={false}
+          onStart={() => console.log('Start')}
+          onPause={() => console.log('Pause')}
+          onStop={() => console.log('Stop')}
+          onContinue={() => console.log('Continue')}
+          onReset={() => {
+            setProject(null);
+            setLogs([]);
+            setProjectId(null);
+            setActivePrompt(null);
+          }}
+        />
+      </div>
+
+      {/* Terminal Access - Floating */}
+      <TerminalAccess
+        projectId={projectId ?? undefined}
+        isActive={isGenerating}
+        onStop={() => console.log('Stop terminal')}
+      />
     </div>
   );
 }

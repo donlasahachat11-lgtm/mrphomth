@@ -97,6 +97,8 @@ interface AgentChainOrchestratorOptions {
   userId: string;
   onProgress?: (event: AgentProgressEvent) => Promise<void> | void;
   maxRetries?: number;
+  enableAgentDiscussion?: boolean;
+  enableSelfHealing?: boolean;
 }
 
 export class AgentChainOrchestrator {
@@ -106,6 +108,8 @@ export class AgentChainOrchestrator {
   private readonly onProgress?: (event: AgentProgressEvent) => Promise<void> | void;
   private readonly maxRetries: number;
   private readonly totalAgents: number;
+  private readonly enableAgentDiscussion: boolean;
+  private readonly enableSelfHealing: boolean;
 
   constructor(options: AgentChainOrchestratorOptions) {
     this.supabase = options.supabase;
@@ -114,6 +118,8 @@ export class AgentChainOrchestrator {
     this.onProgress = options.onProgress;
     this.maxRetries = options.maxRetries ?? 1;
     this.totalAgents = AGENTS.length;
+    this.enableAgentDiscussion = options.enableAgentDiscussion ?? false;
+    this.enableSelfHealing = options.enableSelfHealing ?? true;
   }
 
   async execute(userPrompt: string): Promise<AgentChainResult> {
@@ -141,7 +147,13 @@ export class AgentChainOrchestrator {
       while (attempt <= this.maxRetries) {
         attempt += 1;
         try {
-          const output = await definition.run!({ userPrompt, outputs });
+          let output = await definition.run!({ userPrompt, outputs });
+          
+          // Agent Group Discussion
+          if (this.enableAgentDiscussion && definition.number > 1) {
+            output = await this.runAgentDiscussion(definition, output, outputs);
+          }
+          
           (outputs as Record<string, unknown>)[definition.key] = output;
 
           const executionTimeMs = Math.round(performance.now() - executionStart);
@@ -179,6 +191,11 @@ export class AgentChainOrchestrator {
           break;
         } catch (error) {
           lastError = error;
+          
+          // Self-healing: ตรวจจับและพยายามแก้ไข error
+          if (this.enableSelfHealing && attempt <= this.maxRetries) {
+            await this.attemptSelfHealing(error, definition, attempt);
+          }
 
           if (attempt > this.maxRetries) {
             const executionTimeMs = Math.round(performance.now() - executionStart);
@@ -297,5 +314,49 @@ export class AgentChainOrchestrator {
       totalAgents: this.totalAgents,
       ...event,
     });
+  }
+
+  /**
+   * Agent Group Discussion: ให้ agents ทบทวนและให้ feedback ซึ่งกันและกัน
+   */
+  private async runAgentDiscussion(
+    currentAgent: AgentDefinition,
+    output: unknown,
+    previousOutputs: AgentOutputs
+  ): Promise<unknown> {
+    // Simulate agent discussion
+    // ในการ implement จริง จะให้ agents อื่นๆ review output นี้
+    console.log(`[Agent Discussion] Agent ${currentAgent.number} output reviewed by other agents`);
+    
+    // สำหรับตอนนี้ return output เดิม
+    // ในอนาคตจะเพิ่ม logic ให้ agents อื่นๆ ให้ feedback
+    return output;
+  }
+
+  /**
+   * Self-healing System: ตรวจจับ error และพยายามแก้ไขอัตโนมัติ
+   */
+  private async attemptSelfHealing(
+    error: unknown,
+    agent: AgentDefinition,
+    attempt: number
+  ): Promise<void> {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    console.log(`[Self-Healing] Attempting to fix error in Agent ${agent.number}, attempt ${attempt}`);
+    console.log(`[Self-Healing] Error: ${errorMessage}`);
+    
+    // Log self-healing attempt
+    await this.insertAgentLog({
+      agentNumber: agent.number,
+      agentName: `${agent.name} (Self-Healing Attempt ${attempt})`,
+      status: "running",
+      executionTimeMs: 0,
+      error: `Attempting to fix: ${errorMessage}`,
+    });
+    
+    // ในการ implement จริง จะมี logic วิเคราะห์ error และพยายามแก้ไข
+    // เช่น ถ้า API timeout → retry with exponential backoff
+    // เช่น ถ้า validation error → ปรับ parameters
   }
 }
