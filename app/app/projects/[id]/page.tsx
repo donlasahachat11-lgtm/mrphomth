@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { CodeViewer } from "@/components/CodeViewer";
+import { DeploymentActions } from "@/components/DeploymentActions";
+import { ProjectStats } from "@/components/ProjectStats";
 import type {
   ProjectRecord,
   AgentLogRecord,
@@ -112,6 +115,78 @@ export default function ProjectDetailPage() {
   }
 
   const chainOutput = project.final_output || (project.agent_outputs as Partial<AgentChainResultPayload>);
+
+  // Prepare code files from agent outputs
+  const codeFiles = [];
+  if (chainOutput?.agent3_output?.api_routes) {
+    chainOutput.agent3_output.api_routes.forEach((route) => {
+      codeFiles.push({
+        name: route.path.split("/").pop() || "route",
+        path: `app/api${route.path}/route.ts`,
+        code: route.code,
+      });
+    });
+  }
+  if (chainOutput?.agent4_output?.components) {
+    chainOutput.agent4_output.components.forEach((comp) => {
+      codeFiles.push({
+        name: comp.name,
+        path: comp.path,
+        code: comp.code,
+      });
+    });
+  }
+  if (chainOutput?.agent5_output?.integrations) {
+    chainOutput.agent5_output.integrations.forEach((integration) => {
+      codeFiles.push({
+        name: integration.name,
+        path: `lib/${integration.name}.ts`,
+        code: integration.code,
+      });
+    });
+  }
+  if (chainOutput?.agent6_output?.test_files) {
+    chainOutput.agent6_output.test_files.forEach((test) => {
+      codeFiles.push({
+        name: test.name,
+        path: test.path,
+        code: test.code,
+      });
+    });
+  }
+  if (chainOutput?.agent7_output?.deployment_config?.config_files) {
+    chainOutput.agent7_output.deployment_config.config_files.forEach((config) => {
+      codeFiles.push({
+        name: config.name,
+        path: config.name,
+        code: config.content,
+      });
+    });
+  }
+
+  // Prepare stats
+  const projectStats = [
+    {
+      label: "Agents",
+      value: logs.filter((l) => l.status === "completed").length + "/7",
+      icon: "🤖",
+    },
+    {
+      label: "Files",
+      value: codeFiles.length,
+      icon: "📄",
+    },
+    {
+      label: "API Routes",
+      value: chainOutput?.agent3_output?.api_routes?.length || 0,
+      icon: "🔌",
+    },
+    {
+      label: "Components",
+      value: chainOutput?.agent4_output?.components?.length || 0,
+      icon: "🎨",
+    },
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -319,15 +394,30 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      {/* Actions */}
+      {/* Project Stats */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Project Overview</h2>
+        <ProjectStats stats={projectStats} />
+      </div>
+
+      {/* Code Viewer */}
+      {codeFiles.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Generated Code</h2>
+          <CodeViewer files={codeFiles} />
+        </div>
+      )}
+
+      {/* Deployment Actions */}
       {project.status === "completed" && (
-        <div className="flex gap-4">
-          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-            Deploy to Vercel
-          </button>
-          <button className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:border-gray-400 transition-colors">
-            Download Source Code
-          </button>
+        <div className="mb-8">
+          <DeploymentActions
+            projectId={project.id}
+            projectName={project.name || "project"}
+            onDeploy={(platform) => {
+              console.log(`Deploying to ${platform}`);
+            }}
+          />
         </div>
       )}
     </div>
