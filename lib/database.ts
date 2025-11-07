@@ -194,7 +194,7 @@ export async function saveApiKey(
   displayName?: string
 ) {
   const { data, error } = await supabase
-    .from('api_credentials')
+    .from('api_keys')
     .insert({
       user_id: userId,
       provider,
@@ -210,7 +210,7 @@ export async function saveApiKey(
 
 export async function getApiKeys(userId: string) {
   const { data, error } = await supabase
-    .from('api_credentials')
+    .from('api_keys')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -221,7 +221,7 @@ export async function getApiKeys(userId: string) {
 
 export async function getApiKey(keyId: string) {
   const { data, error } = await supabase
-    .from('api_credentials')
+    .from('api_keys')
     .select('*')
     .eq('id', keyId)
     .single();
@@ -232,7 +232,7 @@ export async function getApiKey(keyId: string) {
 
 export async function deleteApiKey(keyId: string) {
   const { error } = await supabase
-    .from('api_credentials')
+    .from('api_keys')
     .delete()
     .eq('id', keyId);
 
@@ -242,7 +242,7 @@ export async function deleteApiKey(keyId: string) {
 // User Profiles
 export async function getUserProfile(userId: string) {
   const { data, error } = await supabase
-    .from('user_profiles')
+    .from('profiles')
     .select('*')
     .eq('id', userId)
     .single();
@@ -260,7 +260,7 @@ export async function updateUserProfile(
   }
 ) {
   const { data, error } = await supabase
-    .from('user_profiles')
+    .from('profiles')
     .update(updates)
     .eq('id', userId)
     .select()

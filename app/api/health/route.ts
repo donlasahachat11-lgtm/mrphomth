@@ -10,7 +10,7 @@ export async function GET() {
   try {
     // Test database connection
     const { data: healthCheck, error: dbError } = await supabase
-      .from("user_profiles")
+      .from("profiles")
       .select("id")
       .limit(1)
 
