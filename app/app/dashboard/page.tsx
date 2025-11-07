@@ -133,7 +133,7 @@ function formatArchitectureSection(output: Agent2Output): string {
     (table) => `• ${table.name}: ${table.columns.join(', ')}`,
   ) ?? [];
 
-  const lines = ['Folder Structure:', ...output.folder_structure.app.map((item) => `• app/${item}`), ''];
+  const lines = ['Folder Structure:', ...(output.folder_structure?.app?.map((item) => `• app/${item}`) ?? []), ''];
 
   if (output.folder_structure.components?.length) {
     lines.push('Components:', ...output.folder_structure.components.map((item) => `• ${item}`), '');

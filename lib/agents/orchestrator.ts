@@ -93,7 +93,7 @@ const AGENTS: AgentDefinition[] = [
       if (!outputs.agent2_output || !outputs.agent3_output) {
         throw new Error("Agent 4 requires Agent 2 and 3 outputs but some were missing");
       }
-      return executeAgent4(outputs.agent2_output, outputs.agent3_output);
+      return executeAgent4(outputs.agent2_output, outputs.agent3_output as Agent3Output);
     },
   },
   {
@@ -104,7 +104,7 @@ const AGENTS: AgentDefinition[] = [
       if (!outputs.agent2_output || !outputs.agent3_output || !outputs.agent4_output) {
         throw new Error("Agent 5 requires Agent 2, 3, and 4 outputs but some were missing");
       }
-      return executeAgent5(outputs.agent2_output, outputs.agent3_output, outputs.agent4_output);
+      return executeAgent5(outputs.agent2_output, outputs.agent3_output as Agent3Output, outputs.agent4_output as Agent4Output);
     },
   },
   {
@@ -273,20 +273,20 @@ export class AgentChainOrchestrator {
     const finalResult: AgentChainResult = {
       agent1_output: outputs.agent1_output,
       agent2_output: outputs.agent2_output,
-      agent3_output: outputs.agent3_output,
-      agent4_output: outputs.agent4_output,
-      agent5_output: outputs.agent5_output,
-      agent6_output: outputs.agent6_output,
-      agent7_output: outputs.agent7_output,
+      agent3_output: outputs.agent3_output as Agent3Output | undefined,
+      agent4_output: outputs.agent4_output as Agent4Output | undefined,
+      agent5_output: outputs.agent5_output as Agent5Output | undefined,
+      agent6_output: outputs.agent6_output as Agent6Output | undefined,
+      agent7_output: outputs.agent7_output as Agent7Output | undefined,
       final_project: {
         name: outputs.agent1_output.project_name,
         description: outputs.agent1_output.description,
         files_generated: (
-          (outputs.agent3_output?.api_routes?.length || 0) +
-          (outputs.agent4_output?.components?.length || 0) +
-          (outputs.agent5_output?.integrations?.length || 0) +
-          (outputs.agent6_output?.test_files?.length || 0) +
-          (outputs.agent7_output?.deployment_config?.config_files?.length || 0)
+          ((outputs.agent3_output as Agent3Output | undefined)?.api_routes?.length || 0) +
+          ((outputs.agent4_output as Agent4Output | undefined)?.components?.length || 0) +
+          ((outputs.agent5_output as Agent5Output | undefined)?.integrations?.length || 0) +
+          ((outputs.agent6_output as Agent6Output | undefined)?.test_files?.length || 0) +
+          ((outputs.agent7_output as Agent7Output | undefined)?.deployment_config?.config_files?.length || 0)
         ),
       },
     };
@@ -340,20 +340,20 @@ export class AgentChainOrchestrator {
     const result: Partial<AgentChainResult> = {
       agent1_output: outputs.agent1_output,
       agent2_output: outputs.agent2_output,
-      agent3_output: outputs.agent3_output,
-      agent4_output: outputs.agent4_output,
-      agent5_output: outputs.agent5_output,
-      agent6_output: outputs.agent6_output,
-      agent7_output: outputs.agent7_output,
+      agent3_output: outputs.agent3_output as Agent3Output | undefined,
+      agent4_output: outputs.agent4_output as Agent4Output | undefined,
+      agent5_output: outputs.agent5_output as Agent5Output | undefined,
+      agent6_output: outputs.agent6_output as Agent6Output | undefined,
+      agent7_output: outputs.agent7_output as Agent7Output | undefined,
       final_project: outputs.agent1_output ? {
         name: outputs.agent1_output.project_name,
         description: outputs.agent1_output.description,
         files_generated: (
-          (outputs.agent3_output?.api_routes?.length || 0) +
-          (outputs.agent4_output?.components?.length || 0) +
-          (outputs.agent5_output?.integrations?.length || 0) +
-          (outputs.agent6_output?.test_files?.length || 0) +
-          (outputs.agent7_output?.deployment_config?.config_files?.length || 0)
+          ((outputs.agent3_output as Agent3Output | undefined)?.api_routes?.length || 0) +
+          ((outputs.agent4_output as Agent4Output | undefined)?.components?.length || 0) +
+          ((outputs.agent5_output as Agent5Output | undefined)?.integrations?.length || 0) +
+          ((outputs.agent6_output as Agent6Output | undefined)?.test_files?.length || 0) +
+          ((outputs.agent7_output as Agent7Output | undefined)?.deployment_config?.config_files?.length || 0)
         ),
       } : null,
     };

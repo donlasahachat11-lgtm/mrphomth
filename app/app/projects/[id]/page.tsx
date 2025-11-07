@@ -117,7 +117,7 @@ export default function ProjectDetailPage() {
   const chainOutput = project.final_output || (project.agent_outputs as Partial<AgentChainResultPayload>);
 
   // Prepare code files from agent outputs
-  const codeFiles = [];
+  const codeFiles: Array<{ name: string; path: string; code: string }> = [];
   if (chainOutput?.agent3_output?.api_routes) {
     chainOutput.agent3_output.api_routes.forEach((route) => {
       codeFiles.push({
@@ -304,7 +304,7 @@ export default function ProjectDetailPage() {
                   </div>
                 )}
 
-                {log.output && (
+                {log.output ? (
                   <details className="mt-2">
                     <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-700">
                       View output
@@ -313,7 +313,7 @@ export default function ProjectDetailPage() {
                       {JSON.stringify(log.output, null, 2)}
                     </pre>
                   </details>
-                )}
+                ) : null}
               </div>
             ))
           )}
