@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession();
 
   // Define protected paths
-  const protectedPaths = ['/app'];
+  const protectedPaths = ['/app', '/admin'];
   const isProtectedPath = protectedPaths.some(path =>
     req.nextUrl.pathname.startsWith(path)
   );
@@ -30,6 +30,36 @@ export async function middleware(req: NextRequest) {
     const redirectUrl = new URL('/login', req.url);
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Admin routes require admin role
+  if (req.nextUrl.pathname.startsWith('/admin') && session) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', session.user.id)
+      .single();
+
+    // Check if account is active
+    if (!profile?.is_active) {
+      return NextResponse.redirect(new URL('/account-disabled', req.url));
+    }
+
+    // Check if user is admin
+    if (profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+  }
+
+  // Update last_sign_in_at when user accesses the app
+  if (session && isProtectedPath) {
+    // Update last sign in time (fire and forget)
+    supabase
+      .from('profiles')
+      .update({ last_sign_in_at: new Date().toISOString() })
+      .eq('id', session.user.id)
+      .then(() => {})
+      .catch(() => {});
   }
 
   // If user is authenticated and trying to access login/signup pages
