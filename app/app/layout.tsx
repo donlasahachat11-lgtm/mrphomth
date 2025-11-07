@@ -3,6 +3,8 @@ import { ReactNode } from "react";
 import { LogOut, PanelsTopLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard" },
@@ -20,15 +22,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm">
-                MP
-              </span>
-              <div>
-                <Link href="/app/dashboard" className="text-lg font-semibold text-foreground">
-                  Mr.Promth
-                </Link>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">From Prompt to Production</p>
-              </div>
+              <Logo href="/app/dashboard" width={140} height={32} />
             </div>
             <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
               {navigation.map((item) => (
@@ -42,6 +36,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               ))}
             </nav>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <div className="hidden items-center gap-3 rounded-full border border-border/80 bg-background/60 px-3 py-1.5 shadow-sm md:flex">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 text-sm font-semibold text-secondary-foreground">
                   AJ

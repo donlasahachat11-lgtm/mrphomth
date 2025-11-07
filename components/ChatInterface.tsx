@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Settings, Code, Terminal, RefreshCw, Play, StopCircle } from 'lucide-react'
+import { Send, Bot, User, Settings, RefreshCw, StopCircle, Play } from 'lucide-react'
+import { CodeIcon, TerminalIcon } from '@/components/custom-icons'
 import { CombinedInterface } from './CombinedInterface'
 
 interface Message {
@@ -152,9 +153,9 @@ export function ChatInterface({ sessionId, initialMessages = [] }: ChatInterface
       case 'thinking':
         return <RefreshCw className="w-4 h-4 animate-spin" />
       case 'executing':
-        return <Terminal className="w-4 h-4 animate-pulse" />
+        return <TerminalIcon className="w-4 h-4 animate-pulse" />
       case 'completed':
-        return <Code className="w-4 h-4" />
+        return <CodeIcon className="w-4 h-4" />
       default:
         return <Bot className="w-4 h-4" />
     }
@@ -257,7 +258,7 @@ export function ChatInterface({ sessionId, initialMessages = [] }: ChatInterface
                 ) : message.role === 'assistant' ? (
                   <Bot className="w-4 h-4" />
                 ) : (
-                  <Terminal className="w-4 h-4" />
+                  <TerminalIcon className="w-4 h-4" />
                 )}
               </div>
 

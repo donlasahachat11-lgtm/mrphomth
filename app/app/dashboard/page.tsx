@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AgentChainProgress, AgentStep, AgentStepStatus } from '@/components/AgentChainProgress';
+import { SimpleProgress } from '@/components/SimpleProgress';
 import { PromptInput } from '@/components/PromptInput';
 import { ProjectOutput } from '@/components/ProjectOutput';
 import type {
@@ -15,97 +15,21 @@ import type {
 
 const TOTAL_AGENTS = 7;
 
-type AgentTemplate = Pick<AgentStep, 'id' | 'title' | 'description'>;
-
-const AGENT_TEMPLATES: AgentTemplate[] = [
-  {
-    id: 1,
-    title: 'Prompt Expander & Analyzer',
-    description: 'แปลง prompt เริ่มต้นให้เป็นสเปคโปรเจกต์ที่ละเอียด ครอบคลุมทุกความต้องการ',
-  },
-  {
-    id: 2,
-    title: 'Architecture Designer',
-    description: 'วางสถาปัตยกรรมระบบ โครงสร้าง database และ dependency ทั้งหมด',
-  },
-  {
-    id: 3,
-    title: 'Database & Backend Developer',
-    description: 'สร้างสคริปต์ migration และ API routes ตามสเปค',
-  },
-  {
-    id: 4,
-    title: 'Frontend Component Developer',
-    description: 'ประกอบ UI components และหน้าเว็บให้ตรงตามดีไซน์',
-  },
-  {
-    id: 5,
-    title: 'Integration & Logic Developer',
-    description: 'เชื่อมต่อ frontend-backend จัดการ state validation และ business logic',
-  },
-  {
-    id: 6,
-    title: 'Testing & Quality Assurance',
-    description: 'สร้างชุดทดสอบ ตรวจสอบคุณภาพและความเสถียรของระบบ',
-  },
-  {
-    id: 7,
-    title: 'Optimization & Deployment',
-    description: 'ปรับประสิทธิภาพและเตรียม configuration สำหรับ deploy ขึ้น Vercel',
-  },
-];
-
-function summarizeLog(agentNumber: number, output: unknown): string | undefined {
-  if (!output || typeof output !== 'object') {
-    return undefined;
-  }
-
-  if (agentNumber === 1) {
-    const spec = output as Partial<Agent1Output>;
-    const featureCount = Array.isArray(spec.features) ? spec.features.length : 0;
-    const pageCount = Array.isArray(spec.pages) ? spec.pages.length : 0;
-    const projectType = spec.project_type ?? 'Unknown';
-    return `Project: ${projectType} · Features: ${featureCount} · Pages: ${pageCount}`;
-  }
-
-  if (agentNumber === 2) {
-    const architecture = output as Partial<Agent2Output>;
-    const tableCount = architecture.database_schema?.tables?.length ?? 0;
-    const endpointCount = architecture.api_endpoints?.length ?? 0;
-    return `Tables: ${tableCount} · APIs: ${endpointCount}`;
-  }
-
-  return undefined;
+function calculateProgress(project: ProjectRecord | null, logs: AgentLogRecord[]): number {
+  if (!project) return 0;
+  if (project.status === 'completed') return 100;
+  if (project.status === 'error') return Math.min(((project.current_agent ?? 1) - 1) * (100 / TOTAL_AGENTS), 100);
+  
+  const completedCount = logs.filter(log => log.status === 'completed').length;
+  return Math.min((completedCount / TOTAL_AGENTS) * 100, 100);
 }
 
-function buildSteps(
-  templates: AgentTemplate[],
-  project: ProjectRecord | null,
-  logs: AgentLogRecord[],
-): AgentStep[] {
-  return templates.map((template) => {
-    const log = logs.find((entry) => entry.agent_number === template.id) ?? null;
-    let status: AgentStepStatus = 'idle';
-
-    if (log) {
-      if (log.status === 'completed') status = 'completed';
-      else if (log.status === 'error') status = 'error';
-    } else if (project) {
-      if (project.status === 'error' && project.current_agent === template.id) {
-        status = 'error';
-      } else if (project.status === 'running' && project.current_agent === template.id) {
-        status = 'running';
-      } else if (project.status === 'pending' && template.id === 1) {
-        status = 'running';
-      }
-    }
-
-    return {
-      ...template,
-      status,
-      outputPreview: summarizeLog(template.id, log?.output ?? undefined),
-    } satisfies AgentStep;
-  });
+function getProgressStatus(project: ProjectRecord | null): 'idle' | 'running' | 'completed' | 'error' {
+  if (!project) return 'idle';
+  if (project.status === 'completed') return 'completed';
+  if (project.status === 'error') return 'error';
+  if (project.status === 'running' || project.status === 'pending') return 'running';
+  return 'idle';
 }
 
 function formatSpecSection(output: Agent1Output): string {
@@ -250,7 +174,9 @@ export default function DashboardPage() {
     [stopPolling],
   );
 
-  const derivedSteps = useMemo(() => buildSteps(AGENT_TEMPLATES, project, logs), [project, logs]);
+  const progress = useMemo(() => calculateProgress(project, logs), [project, logs]);
+  const progressStatus = useMemo(() => getProgressStatus(project), [project]);
+  const completedSteps = useMemo(() => logs.filter(log => log.status === 'completed').length, [logs]);
 
   const chainOutput = useMemo<Partial<AgentChainResultPayload> | null>(() => {
     if (!project) return null;
@@ -286,7 +212,7 @@ export default function DashboardPage() {
 
   const stats = useMemo(
     () => [
-      { label: 'Agents', value: TOTAL_AGENTS.toString() },
+      { label: 'ขั้นตอน', value: TOTAL_AGENTS.toString() },
       { label: 'Status', value: project?.status ? project.status.toUpperCase() : 'IDLE' },
       { label: 'Deploy Ready', value: 'Vercel' },
     ],
@@ -325,10 +251,10 @@ export default function DashboardPage() {
           <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-secondary/30 bg-secondary/10 p-6 text-secondary-foreground">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-secondary-foreground/70">
-                Agent Chain Flow
+                กระบวนการทำงาน
               </p>
               <p className="mt-4 text-2xl font-semibold">
-                User Prompt → Agent 1 → … → Agent 7 → Production
+                Prompt เดียว → AI สร้าง → เว็บสำเร็จ
               </p>
             </div>
             <div className="rounded-2xl border border-secondary/40 bg-background/60 px-4 py-4 text-sm text-muted-foreground">
@@ -352,7 +278,13 @@ export default function DashboardPage() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-        <AgentChainProgress steps={derivedSteps} />
+        <SimpleProgress 
+          status={progressStatus}
+          progress={progress}
+          currentStep={project?.status === 'running' ? 'กำลังสร้างเว็บของคุณ...' : undefined}
+          totalSteps={TOTAL_AGENTS}
+          completedSteps={completedSteps}
+        />
         <ProjectOutput
           prompt={activePrompt}
           isLoading={isGenerating}
