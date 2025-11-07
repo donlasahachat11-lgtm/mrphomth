@@ -61,7 +61,7 @@ export default function SignupPage() {
         return;
       }
 
-      router.push('/app');
+      router.push('/app/dashboard');
       router.refresh();
     } catch (error) {
       setError('เกิดข้อผิดพลาดในการสมัครสมาชิก');

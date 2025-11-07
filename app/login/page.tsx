@@ -33,7 +33,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/app');
+      router.push('/app/dashboard');
       router.refresh();
     } catch (error) {
       setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
