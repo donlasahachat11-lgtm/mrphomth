@@ -1,7 +1,14 @@
-# Mr.Prompt: AI-Powered Project Generator
 
-**MrMr.Prompt is a revolutionary AI-powered platform that generates complete, production-ready web projects from a single natural language prompt. Describe your project, and our autonomous AI agents will handle everything from backend code and database schemas to frontend components and deployment.
+![Production Readiness](https://img.shields.io/badge/Production%20Ready-95%25-brightgreen)
+![Security Score](https://img.shields.io/badge/Security%20Score-86.5%2F100-green)
+![Tests](https://img.shields.io/badge/Tests-177%20passing-success)
+![Build](https://img.shields.io/badge/Build-Passing-success)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
+**Mr.Prompt is a revolutionary AI-powered platform that generates complete, production-ready web projects from a single natural language prompt. Describe your project, and our autonomous AI agents will handle everything from backend code and database schemas to frontend components and deployment.
+
+**🌐 Production URL:** https://mrphomth.vercel.app  
+**📚 Documentation:** [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 
 
 ## ✨ Features

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function GeneratePage() {
   const router = useRouter()
@@ -102,46 +104,37 @@ export default function GeneratePage() {
               </div>
               
               {/* Examples */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                  💡 Example Prompts:
-                </h3>
-                <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
-                  <li>• "Create a task management app with drag-and-drop, user auth, and real-time updates"</li>
-                  <li>• "Build an e-commerce store with product catalog, shopping cart, and Stripe payment"</li>
-                  <li>• "Make a social media dashboard with posts, likes, comments, and user profiles"</li>
-                </ul>
-              </div>
+              <Alert variant="info">
+                <AlertDescription>
+                  <h3 className="font-medium mb-2">
+                    💡 Example Prompts:
+                  </h3>
+                  <ul className="space-y-1">
+                    <li>• "Create a task management app with drag-and-drop, user auth, and real-time updates"</li>
+                    <li>• "Build an e-commerce store with product catalog, shopping cart, and Stripe payment"</li>
+                    <li>• "Make a social media dashboard with posts, likes, comments, and user profiles"</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
               
               {/* Error */}
               {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <p className="text-sm text-red-800 dark:text-red-400">
-                    ❌ {error}
-                  </p>
-                </div>
+                <Alert variant="error">
+                  <AlertDescription>
+                    {error}
+                  </AlertDescription>
+                </Alert>
               )}
               
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                isLoading={loading}
+                className="w-full"
+                size="lg"
               >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Starting Generation...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🚀 Generate Project</span>
-                  </>
-                )}
-              </button>
+                {loading ? 'Starting Generation...' : '🚀 Generate Project'}
+              </Button>
             </form>
           </div>
           
