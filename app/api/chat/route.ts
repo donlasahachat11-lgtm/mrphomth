@@ -32,6 +32,7 @@ interface ChatRequestBody {
   model?: string;
   session_id?: string;
   stream?: boolean;
+  ai_mode?: string;
   tool?: { name?: string; input?: string } | null;
   [key: string]: unknown;
 }
@@ -588,13 +589,38 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Use Vanchin AI directly instead of AI Gateway
-  const { createVanchinClient, getNextModel } = await import('@/lib/ai/vanchin-client');
+  // Use Vanchin AI with AI mode-specific model selection
+  const { createRandomClientForMode, getSystemPromptForMode } = await import('@/lib/ai/mode-to-model');
+  const { getNextModel } = await import('@/lib/ai/vanchin-client');
   
   let finalText = '';
   
   try {
-    const { client, endpoint } = getNextModel();
+    // Determine which model to use based on AI mode
+    let client, endpoint;
+    
+    if (body.ai_mode) {
+      // Use mode-specific model with load balancing
+      const aiMode = body.ai_mode as any;
+      const result = createRandomClientForMode(aiMode);
+      client = result.client;
+      endpoint = result.endpoint;
+      
+      // Add system prompt for the AI mode if not already present
+      const hasSystemPrompt = augmentedMessages.some(m => m.role === 'system');
+      if (!hasSystemPrompt) {
+        const systemPrompt = getSystemPromptForMode(aiMode);
+        augmentedMessages = [
+          { role: 'system', content: systemPrompt },
+          ...augmentedMessages
+        ];
+      }
+    } else {
+      // Fallback to round-robin if no AI mode specified
+      const result = getNextModel();
+      client = result.client;
+      endpoint = result.endpoint;
+    }
     
     const completion = await client.chat.completions.create({
       model: endpoint,
