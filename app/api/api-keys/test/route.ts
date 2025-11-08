@@ -1,18 +1,16 @@
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-
-export const dynamic = 'force-dynamic'
-import { NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic'
-import { decryptSecret } from '@/utils/security';
-
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
+
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+
+import { NextResponse } from 'next/server';
+
+import { decryptSecret } from '@/utils/security';
+
+
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',

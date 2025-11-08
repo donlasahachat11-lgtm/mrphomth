@@ -1,18 +1,16 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export const dynamic = 'force-dynamic'
-import { NextRequest, NextResponse } from "next/server";
-
-export const dynamic = 'force-dynamic'
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic'
-import { createChatSession, getChatSessions, saveMessage, getMessages } from '@/lib/database';
-
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
+
+import { NextRequest, NextResponse } from "next/server";
+
+import { cookies } from 'next/headers';
+
+import { createChatSession, getChatSessions, saveMessage, getMessages } from '@/lib/database';
+
+
 
 export async function GET(request: NextRequest) {
   const supabase = createServerComponentClient({ cookies });

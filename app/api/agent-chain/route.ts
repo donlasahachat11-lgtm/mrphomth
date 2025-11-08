@@ -1,24 +1,20 @@
 import { cookies } from "next/headers";
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic'
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
-export const dynamic = 'force-dynamic'
 
 import { AgentChainOrchestrator } from "@/lib/agents/orchestrator";
 
-export const dynamic = 'force-dynamic'
 import { createServiceRoleSupabaseClient } from "@/lib/database";
 
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
 
-export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });

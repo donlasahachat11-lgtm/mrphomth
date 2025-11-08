@@ -1,18 +1,16 @@
 import { cookies } from "next/headers";
 
 export const dynamic = 'force-dynamic'
-import { NextRequest, NextResponse } from "next/server";
-
-export const dynamic = 'force-dynamic'
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-
-export const dynamic = 'force-dynamic'
-import { z } from "zod";
-
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
+
+import { NextRequest, NextResponse } from "next/server";
+
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+
+import { z } from "zod";
+
+
 
 
 const promptInputSchema = z.object({

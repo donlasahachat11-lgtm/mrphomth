@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-
-export const dynamic = 'force-dynamic'
-import { cookies } from 'next/headers';
-
-export const dynamic = 'force-dynamic'
-import { GitHubClient } from '@/lib/github/github-client';
-
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
+
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+
+import { cookies } from 'next/headers';
+
+import { GitHubClient } from '@/lib/github/github-client';
+
+
 
 export async function POST(
   request: NextRequest,

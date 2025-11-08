@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 
-export const dynamic = 'force-dynamic'
 import { cookies } from 'next/headers';
 
-export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
@@ -106,13 +107,9 @@ function getMockFileContent(path: string): string {
     '/app/layout.tsx': `import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
-export const dynamic = 'force-dynamic'
 import './globals.css'
 
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 
-export const dynamic = 'force-dynamic'
 
 const inter = Inter({ subsets: ['latin'] })
 
