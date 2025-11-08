@@ -91,6 +91,7 @@ export function FileUploadV2({
   }
 
   const getFileIcon = (type: string) => {
+    // eslint-disable-next-line jsx-a11y/alt-text
     if (type.startsWith('image/')) return <Image className="h-5 w-5" />
     if (type.startsWith('text/')) return <FileText className="h-5 w-5" />
     if (type.includes('json') || type.includes('javascript')) return <Code className="h-5 w-5" />

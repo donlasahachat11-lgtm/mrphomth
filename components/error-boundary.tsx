@@ -30,8 +30,18 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log error to console
     console.error('Error caught by boundary:', error, errorInfo)
     
-    // TODO: Send error to error tracking service (e.g., Sentry)
-    // logErrorToService(error, errorInfo)
+    // Send error to Sentry
+    if (typeof window !== 'undefined') {
+      import('@/lib/monitoring/sentry').then(({ captureException }) => {
+        captureException(error, {
+          extra: {
+            componentStack: errorInfo.componentStack,
+            errorBoundary: true,
+          },
+          level: 'error',
+        })
+      })
+    }
   }
   
   render() {
