@@ -1,58 +1,134 @@
 # Deployment Guide
 
-This guide provides instructions for deploying the Mr. Prompt application to Vercel.
+This guide explains how to deploy Mr.Prompt to a production environment.
 
-## Deploying to Vercel
+## Recommended Deployment: Vercel
 
-Vercel is a cloud platform for static sites and Serverless Functions that fits perfectly with Next.js applications.
+The easiest way to deploy Mr.Prompt is with [Vercel](https://vercel.com/), the creators of Next.js.
 
-### 1. Sign up for Vercel
+### 1. Fork the Repository
 
-If you don't have a Vercel account, sign up for a free account at [vercel.com](https://vercel.com/).
+Fork the [Mr.Prompt repository](https://github.com/donlasahachat11-lgtm/mrphomth) to your own GitHub account.
 
-### 2. Import Your Git Repository
+### 2. Create a Vercel Project
 
-1.  From your Vercel dashboard, click on **Add New... > Project**.
-2.  Connect your Git provider (GitHub, GitLab, or Bitbucket) where your forked repository is located.
-3.  Select the `mrphomth` repository.
+1.  Go to your [Vercel dashboard](https://vercel.com/dashboard) and click "Add New..." > "Project".
+2.  Import your forked GitHub repository.
+3.  Vercel will automatically detect that it is a Next.js project.
 
-### 3. Configure Your Project
+### 3. Configure Environment Variables
 
-Vercel will automatically detect that you are deploying a Next.js application and configure the build settings for you. The most important step is to add the required environment variables.
+In your Vercel project settings, go to the "Environment Variables" section and add the following:
 
-#### Adding Environment Variables
-
-In the **Configure Project** screen, expand the **Environment Variables** section and add the following variables:
-
-| Name                          | Value                 |
-| ----------------------------- | --------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`    | Your Supabase URL     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase Anon Key|
-
-You can find these values in your Supabase project dashboard under **Project Settings > API**.
-
-![Vercel Environment Variables](https://i.imgur.com/YOUR_ENV_VAR_SCREENSHOT.png) <!-- Replace with an actual screenshot -->
+-   `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
+-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key.
+-   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key.
+-   `VC_API_KEY`: Your Vanchin AI API key.
+-   `VERCEL_TOKEN`: Your Vercel API token (for auto-deployment).
+-   `VERCEL_TEAM_ID`: Your Vercel team ID (for auto-deployment).
+-   `GITHUB_TOKEN`: Your GitHub personal access token (for auto-deployment).
 
 ### 4. Deploy
 
-Click the **Deploy** button. Vercel will start the build and deployment process. Once the deployment is complete, you will be provided with a public URL for your application.
+Click the "Deploy" button. Vercel will build and deploy your project. After the deployment is complete, you will be given a URL to access your application.
 
-### 5. (Optional) Fixing PNPM Version Issues
+## Self-Hosting with Docker
 
-The build log indicates a potential version mismatch for `pnpm`. While Vercel attempts to use a newer version, it's best practice to lock the version used in your project to what is expected by your `pnpm-lock.yaml` file.
+For more control, you can self-host Mr.Prompt using Docker.
 
-To ensure Vercel uses the correct `pnpm` version, you can create a `vercel.json` file in the root of your project with the following content:
+### 1. Create a `docker-compose.yml` File
 
-```json
-{
-  "packageManager": "pnpm@9.x"
-}
+```yaml
+version: '3.8'
+
+services:
+  mr-prompt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - VC_API_KEY=${VC_API_KEY}
+      - VERCEL_TOKEN=${VERCEL_TOKEN}
+      - VERCEL_TEAM_ID=${VERCEL_TEAM_ID}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    restart: always
 ```
 
-Commit this file to your repository. Vercel will automatically detect this configuration and use the specified `pnpm` version for subsequent builds.
+### 2. Create a `Dockerfile`
 
-## Troubleshooting
+```dockerfile
+# Install dependencies only when needed
+FROM node:18-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-- **Build Failures**: The most common cause of build failures is missing environment variables. Double-check that you have correctly added the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` variables in your Vercel project settings.
-- **Serverless Function Errors**: If you encounter errors with serverless functions, check the function logs in your Vercel dashboard for more details.
+# Install dependencies based on the preferred package manager
+COPY package.json pnpm-lock.yaml* ./
+RUN \
+    if [ -f pnpm-lock.yaml ]; then \
+    npm install -g pnpm && pnpm install --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then \
+    npm ci; \
+    else \
+    npm i; \
+    fi
+
+
+# Rebuild the source code only when needed
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry.
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN pnpm build
+
+# Production image, copy all the files and run next
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+# Uncomment the following line in case you want to disable telemetry.
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+
+CMD ["node", "server.js"]
+
+```
+
+### 3. Build and Run the Docker Container
+
+```bash
+docker-compose up -d --build
+```
+
+Your application will be running at `http://localhost:3000`.
 
