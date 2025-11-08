@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/app/dashboard" },
-  { name: "Chat", href: "/app/chat/default" },
+  { name: "Chat", href: "/app/chat" },
   { name: "Prompts", href: "/app/prompts" },
 ];
 
