@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { ModernChatInterfaceV2, Message } from '@/components/chat/modern-chat-interface-v2'
 import { AIModeSelectorV3 } from '@/components/chat/ai-mode-selector-v3'
-import { WorkspaceView } from '@/components/workspace/workspace-view'
+import { WorkspaceViewV2 } from '@/components/workspace/workspace-view-v2'
 import { useAIMode } from '@/lib/hooks/use-ai-mode'
 import { AIMode } from '@/lib/types/ai-mode'
 
@@ -401,7 +401,7 @@ API_KEY=your_api_key
 
         {/* Chat/Workspace Area */}
         {showWorkspace && projectFiles.length > 0 ? (
-          <WorkspaceView
+          <WorkspaceViewV2
             files={projectFiles}
             previewUrl={previewUrl}
             previewHtml={previewHtml}
