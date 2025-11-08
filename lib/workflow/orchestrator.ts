@@ -3,6 +3,8 @@
  * Manages the complete flow from prompt to deployed project
  */
 
+import { executeAgent1 } from '../agents/agent1'
+import { executeAgent2 } from '../agents/agent2'
 import { agent3GenerateBackend } from '../agents/agent3-code-generator'
 import { agent4GenerateFrontend } from '../agents/agent4-frontend-generator'
 import { agent5TestingQA } from '../agents/agent5-testing-qa'
@@ -188,54 +190,117 @@ export class WorkflowOrchestrator {
   }
   
   /**
-   * Step 1: Analyze prompt
+   * Step 1: Analyze prompt with Agent 1
    */
   private async analyzePrompt(prompt: string): Promise<any> {
-    console.log('[Workflow] Analyzing prompt...')
+    console.log('[Workflow] 🤖 Agent 1: Analyzing prompt...')
     
-    // Simple analysis for now
-    // TODO: Integrate with Agent 1
-    return {
-      type: this.detectProjectType(prompt),
-      features: this.extractFeatures(prompt),
-      complexity: this.estimateComplexity(prompt),
-      estimatedTime: '10-15 minutes'
+    try {
+      // Execute Agent 1 to analyze and expand the user prompt
+      const agent1Output = await executeAgent1(prompt)
+      
+      console.log('[Workflow] ✅ Agent 1 completed:', {
+        projectType: agent1Output.project_type,
+        features: agent1Output.features.length,
+        pages: agent1Output.pages.length
+      })
+      
+      // Emit progress event
+      workflowEvents.emitProgress(this.state.id, {
+        step: 1,
+        totalSteps: this.state.totalSteps,
+        status: 'analyzing',
+        message: 'Prompt analysis completed',
+        progress: Math.round((1 / this.state.totalSteps) * 100)
+      })
+      
+      return agent1Output
+      
+    } catch (error) {
+      console.error('[Workflow] ❌ Agent 1 failed:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      // Emit error event
+      workflowEvents.emitError(this.state.id, {
+        error: `Agent 1 failed: ${errorMessage}`,
+        step: 1,
+        recoverable: false
+      })
+      
+      throw new Error(`Agent 1 (Prompt Analysis) failed: ${errorMessage}`)
     }
   }
   
   /**
-   * Step 2: Expand prompt
+   * Step 2: Expand requirements with Agent 2
    */
   private async expandPrompt(analysis: any): Promise<any> {
-    console.log('[Workflow] Expanding prompt...')
+    console.log('[Workflow] 🤖 Agent 2: Expanding requirements...')
     
-    // TODO: Integrate with Agent 2
-    return {
-      backend: {
-        description: 'Create REST API with CRUD operations',
-        endpoints: ['users', 'posts', 'comments'],
-        database: {
-          tables: ['users', 'posts', 'comments'],
-          relationships: ['posts.user_id -> users.id', 'comments.post_id -> posts.id']
+    try {
+      // Execute Agent 2 to create detailed system architecture
+      const agent2Output = await executeAgent2(analysis)
+      
+      console.log('[Workflow] ✅ Agent 2 completed:', {
+        tables: agent2Output.database_schema.tables.length,
+        endpoints: agent2Output.api_endpoints.length,
+        dependencies: Object.keys(agent2Output.dependencies).length
+      })
+      
+      // Emit progress event
+      workflowEvents.emitProgress(this.state.id, {
+        step: 2,
+        totalSteps: this.state.totalSteps,
+        status: 'expanding',
+        message: 'Requirements expansion completed',
+        progress: Math.round((2 / this.state.totalSteps) * 100)
+      })
+      
+      // Map Agent 2 output to the format expected by subsequent agents
+      const mappedOutput = {
+        agent1: analysis,
+        agent2: agent2Output,
+        backend: {
+          description: `Create REST API with ${agent2Output.api_endpoints.length} endpoints`,
+          endpoints: agent2Output.api_endpoints,
+          database: {
+            tables: agent2Output.database_schema.tables.map(t => t.name),
+            schema: agent2Output.database_schema
+          },
+          authentication: true,
+          rateLimit: true
         },
-        authentication: true,
-        rateLimit: true
-      },
-      frontend: {
-        description: 'Create responsive web application',
-        pages: ['home', 'dashboard', 'profile'],
-        components: ['navbar', 'sidebar', 'card'],
-        styling: 'tailwind',
-        responsive: true
+        frontend: {
+          description: `Create ${analysis.design_style} web application`,
+          pages: analysis.pages,
+          components: agent2Output.folder_structure.components,
+          styling: analysis.tech_stack.styling,
+          responsive: true
+        }
       }
+      
+      return mappedOutput
+      
+    } catch (error) {
+      console.error('[Workflow] ❌ Agent 2 failed:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      // Emit error event
+      workflowEvents.emitError(this.state.id, {
+        error: `Agent 2 failed: ${errorMessage}`,
+        step: 2,
+        recoverable: false
+      })
+      
+      throw new Error(`Agent 2 (Requirements Expansion) failed: ${errorMessage}`)
     }
   }
   
   /**
-   * Step 3: Generate backend
+   * Step 3: Generate backend with Agent 3
    */
   private async generateBackend(expansion: any): Promise<any> {
-    console.log('[Workflow] Generating backend...')
+    console.log('[Workflow] 🤖 Agent 3: Generating backend...')
     
     const results = []
     
@@ -273,19 +338,35 @@ export class WorkflowOrchestrator {
       results.push(migrationResult)
     }
     
-    return {
+    const backendResult = {
       success: results.every(r => r.success),
       filesGenerated: results.flatMap(r => r.filesGenerated || []),
       dependencies: [...new Set(results.flatMap(r => r.dependencies || []))],
       nextSteps: results.flatMap(r => r.nextSteps || [])
     }
+    
+    console.log('[Workflow] ✅ Agent 3 completed:', {
+      filesGenerated: backendResult.filesGenerated.length,
+      dependencies: backendResult.dependencies.length
+    })
+    
+    // Emit progress event
+    workflowEvents.emitProgress(this.state.id, {
+      step: 3,
+      totalSteps: this.state.totalSteps,
+      status: 'generating-backend',
+      message: 'Backend generation completed',
+      progress: Math.round((3 / this.state.totalSteps) * 100)
+    })
+    
+    return backendResult
   }
   
   /**
-   * Step 4: Generate frontend
+   * Step 4: Generate frontend with Agent 4
    */
   private async generateFrontend(expansion: any): Promise<any> {
-    console.log('[Workflow] Generating frontend...')
+    console.log('[Workflow] 🤖 Agent 4: Generating frontend...')
     
     const results = []
     
@@ -309,19 +390,35 @@ export class WorkflowOrchestrator {
       }
     }
     
-    return {
+    const frontendResult = {
       success: results.every(r => r.success),
       filesGenerated: results.flatMap(r => r.filesGenerated || []),
       dependencies: [...new Set(results.flatMap(r => r.dependencies || []))],
       nextSteps: results.flatMap(r => r.nextSteps || [])
     }
+    
+    console.log('[Workflow] ✅ Agent 4 completed:', {
+      filesGenerated: frontendResult.filesGenerated.length,
+      dependencies: frontendResult.dependencies.length
+    })
+    
+    // Emit progress event
+    workflowEvents.emitProgress(this.state.id, {
+      step: 4,
+      totalSteps: this.state.totalSteps,
+      status: 'generating-frontend',
+      message: 'Frontend generation completed',
+      progress: Math.round((4 / this.state.totalSteps) * 100)
+    })
+    
+    return frontendResult
   }
   
   /**
-   * Step 5: Run tests
+   * Step 5: Run tests with Agent 5
    */
   private async runTests(): Promise<any> {
-    console.log('[Workflow] Running tests...')
+    console.log('[Workflow] 🤖 Agent 5: Running tests...')
     
     const allFiles = [
       ...(this.state.results.backend?.filesGenerated || []),
@@ -333,10 +430,11 @@ export class WorkflowOrchestrator {
       .map(f => f.path)
     
     if (targetFiles.length === 0) {
+      console.log('[Workflow] ⚠️ No files to test, skipping...')
       return { success: true, message: 'No files to test' }
     }
     
-    return await agent5TestingQA({
+    const testResult = await agent5TestingQA({
       projectId: this.state.id,
       projectPath: this.state.projectPath,
       task: {
@@ -345,15 +443,28 @@ export class WorkflowOrchestrator {
         testFramework: 'jest'
       }
     })
+    
+    console.log('[Workflow] ✅ Agent 5 completed:', testResult)
+    
+    // Emit progress event
+    workflowEvents.emitProgress(this.state.id, {
+      step: 5,
+      totalSteps: this.state.totalSteps,
+      status: 'testing',
+      message: 'Testing completed',
+      progress: Math.round((5 / this.state.totalSteps) * 100)
+    })
+    
+    return testResult
   }
   
   /**
-   * Step 6: Deploy
+   * Step 6: Deploy with Agent 6
    */
   private async deploy(): Promise<any> {
-    console.log('[Workflow] Deploying...')
+    console.log('[Workflow] 🤖 Agent 6: Deploying...')
     
-    return await agent6Deploy({
+    const deployResult = await agent6Deploy({
       projectId: this.state.id,
       projectPath: this.state.projectPath,
       task: {
@@ -362,20 +473,46 @@ export class WorkflowOrchestrator {
         environment: 'production'
       }
     })
+    
+    console.log('[Workflow] ✅ Agent 6 completed:', deployResult)
+    
+    // Emit progress event
+    workflowEvents.emitProgress(this.state.id, {
+      step: 6,
+      totalSteps: this.state.totalSteps,
+      status: 'deploying',
+      message: 'Deployment completed',
+      progress: Math.round((6 / this.state.totalSteps) * 100)
+    })
+    
+    return deployResult
   }
   
   /**
-   * Step 7: Setup monitoring
+   * Step 7: Setup monitoring with Agent 7
    */
   private async setupMonitoring(): Promise<any> {
-    console.log('[Workflow] Setting up monitoring...')
+    console.log('[Workflow] 🤖 Agent 7: Setting up monitoring...')
     
-    return await agent7Monitor({
+    const monitorResult = await agent7Monitor({
       projectId: this.state.id,
       task: {
         type: 'health-check'
       }
     })
+    
+    console.log('[Workflow] ✅ Agent 7 completed:', monitorResult)
+    
+    // Emit progress event
+    workflowEvents.emitProgress(this.state.id, {
+      step: 7,
+      totalSteps: this.state.totalSteps,
+      status: 'monitoring',
+      message: 'Monitoring setup completed',
+      progress: Math.round((7 / this.state.totalSteps) * 100)
+    })
+    
+    return monitorResult
   }
   
   /**
