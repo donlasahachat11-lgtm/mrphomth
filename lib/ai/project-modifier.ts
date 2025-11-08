@@ -112,28 +112,71 @@ Respond ONLY with valid JSON, no additional text.`;
 export async function applyModifications(
   projectId: string,
   modifications: ModificationResult['modifications']
-): Promise<{ success: boolean; message: string }> {
+): Promise<{ success: boolean; message: string; filesModified: number }> {
   try {
-    // In a real implementation, this would:
-    // 1. Load current project files
-    // 2. Apply each modification
-    // 3. Save updated files
-    // 4. Update database
-    
-    console.log(`Applying ${modifications.length} modifications to project ${projectId}`);
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    let filesModified = 0;
 
     for (const mod of modifications) {
-      console.log(`  ${mod.action}: ${mod.path} - ${mod.reason}`);
+      if (mod.action === 'create' || mod.action === 'update') {
+        // Save/update file in database
+        const { error } = await supabase
+          .from('project_files')
+          .upsert({
+            workflow_id: projectId,
+            file_path: mod.path,
+            content: mod.content || '',
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'workflow_id,file_path'
+          });
+
+        if (error) {
+          console.error(`Error saving file ${mod.path}:`, error);
+          continue;
+        }
+
+        filesModified++;
+      } else if (mod.action === 'delete') {
+        // Delete file from database
+        const { error } = await supabase
+          .from('project_files')
+          .delete()
+          .eq('workflow_id', projectId)
+          .eq('file_path', mod.path);
+
+        if (error) {
+          console.error(`Error deleting file ${mod.path}:`, error);
+          continue;
+        }
+
+        filesModified++;
+      }
     }
+
+    // Update workflow timestamp
+    await supabase
+      .from('workflows')
+      .update({
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', projectId);
 
     return {
       success: true,
-      message: `Successfully applied ${modifications.length} modifications`,
+      message: `Successfully modified ${filesModified} files`,
+      filesModified,
     };
   } catch (error) {
     return {
       success: false,
       message: `Failed to apply modifications: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      filesModified: 0,
     };
   }
 }

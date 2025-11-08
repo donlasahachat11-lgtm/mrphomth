@@ -95,21 +95,122 @@ const toolRegistry: Record<ToolName, ToolDefinition> = {
       return null;
     },
     async execute(instruction, context) {
-      const { analyzeModification } = await import('@/lib/ai/project-modifier');
+      const { analyzeModification, applyModifications } = await import('@/lib/ai/project-modifier');
+      const { createRouteHandlerClient } = await import('@supabase/auth-helpers-nextjs');
+      const { cookies } = await import('next/headers');
       
-      // For now, return a placeholder response
-      // In production, this would load the project files and apply modifications
-      return {
-        name: "project_modification",
-        content: `✅ Modification request received!\n\n**Instruction**: ${instruction}\n\n⚠️ This feature is under development. Soon you'll be able to:\n- Add new features to existing projects\n- Modify existing code\n- Remove unwanted features\n- Refactor code structure\n\nStay tuned!`,
-        metadata: {
+      try {
+        // Get user's latest project or ask for project ID
+        const supabase = createRouteHandlerClient({ cookies });
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          return {
+            name: "project_modification",
+            content: "❌ Please login first to modify projects.",
+            metadata: { error: 'unauthorized' },
+            modelMessage: {
+              role: "system",
+              content: "User not authenticated",
+            },
+          };
+        }
+
+        // Get user's most recent project
+        const { data: workflows } = await supabase
+          .from('workflows')
+          .select('id, project_name')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!workflows || workflows.length === 0) {
+          return {
+            name: "project_modification",
+            content: "❌ No projects found. Please create a project first.",
+            metadata: { error: 'no_projects' },
+            modelMessage: {
+              role: "system",
+              content: "No projects available",
+            },
+          };
+        }
+
+        const projectId = workflows[0].id;
+        const projectName = workflows[0].project_name;
+
+        // Load current project files
+        const { data: files } = await supabase
+          .from('project_files')
+          .select('file_path, content')
+          .eq('workflow_id', projectId);
+
+        const currentFiles = (files || []).map(f => ({
+          path: f.file_path,
+          content: f.content,
+        }));
+
+        // Analyze modification request
+        const result = await analyzeModification({
+          projectId,
+          userId: user.id,
           instruction,
-        },
-        modelMessage: {
-          role: "system",
-          content: `Project modification request: ${instruction}`,
-        },
-      };
+          currentFiles,
+        });
+
+        if (!result.success) {
+          return {
+            name: "project_modification",
+            content: `❌ Failed to analyze modifications:\n\n${result.summary}`,
+            metadata: { error: result.summary },
+            modelMessage: {
+              role: "system",
+              content: `Modification analysis failed: ${result.summary}`,
+            },
+          };
+        }
+
+        // Apply modifications
+        const applyResult = await applyModifications(projectId, result.modifications);
+
+        if (!applyResult.success) {
+          return {
+            name: "project_modification",
+            content: `❌ Failed to apply modifications:\n\n${applyResult.message}`,
+            metadata: { error: applyResult.message },
+            modelMessage: {
+              role: "system",
+              content: `Modification failed: ${applyResult.message}`,
+            },
+          };
+        }
+
+        // Success!
+        return {
+          name: "project_modification",
+          content: `✅ **Project Modified Successfully!**\n\n**Project**: ${projectName}\n**Files Modified**: ${applyResult.filesModified}\n\n**Summary**: ${result.summary}\n\n**Changes**:\n${result.modifications.map(m => `- ${m.action.toUpperCase()}: ${m.path}\n  ${m.reason}`).join('\n')}\n\nYou can view your updated project at /editor/${projectId}`,
+          metadata: {
+            projectId,
+            filesModified: applyResult.filesModified,
+            modifications: result.modifications,
+          },
+          modelMessage: {
+            role: "system",
+            content: `Successfully modified project ${projectName}: ${result.summary}`,
+          },
+        };
+      } catch (error) {
+        console.error('Error in project_modification:', error);
+        return {
+          name: "project_modification",
+          content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          metadata: { error: String(error) },
+          modelMessage: {
+            role: "system",
+            content: `Error during modification: ${error}`,
+          },
+        };
+      }
     },
   },
   project_generation: {
