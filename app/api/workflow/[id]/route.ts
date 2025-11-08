@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { cookies } from 'next/headers'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { getWorkflowStatus, cancelWorkflow } from '@/lib/workflow/orchestrator'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 /**
  * GET /api/workflow/[id]

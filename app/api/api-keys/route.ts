@@ -1,7 +1,19 @@
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { encryptSecret, hashIdentifier, maskSecret } from '@/utils/security';
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const ALLOWED_PROVIDERS = ['openai', 'anthropic'] as const;
 type ProviderValue = (typeof ALLOWED_PROVIDERS)[number];
