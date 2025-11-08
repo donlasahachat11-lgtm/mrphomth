@@ -27,7 +27,7 @@ interface ChatRequestBody {
   [key: string]: unknown;
 }
 
-type ToolName = "web_search" | "code_execution" | "project_generation";
+type ToolName = "web_search" | "code_execution" | "project_generation" | "project_modification";
 
 interface ToolInvocation {
   name: ToolName;
@@ -65,6 +65,53 @@ interface SearchResultSummary {
 }
 
 const toolRegistry: Record<ToolName, ToolDefinition> = {
+  project_modification: {
+    description: "Modifies an existing project by adding, updating, or removing features.",
+    matches(message) {
+      if (message.role !== "user") return null;
+      const content = message.content.toLowerCase();
+      
+      // Keywords สำหรับการแก้ไข
+      const modifyKeywords = [
+        'แก้', 'edit', 'modify', 'change', 'update', 
+        'เพิ่ม', 'add', 'remove', 'ลบ', 'fix', 'ปรับปรุง'
+      ];
+      
+      const hasModifyKeyword = modifyKeywords.some(kw => content.includes(kw));
+      
+      // Check if mentioning existing project
+      const hasProjectRef = content.includes('project') || content.includes('โปรเจกต์');
+      
+      if (hasModifyKeyword && hasProjectRef) {
+        return message.content;
+      }
+      
+      // Check for explicit command
+      const commandMatch = content.match(/^!modify\s+(.+)/i);
+      if (commandMatch) {
+        return commandMatch[1].trim();
+      }
+      
+      return null;
+    },
+    async execute(instruction, context) {
+      const { analyzeModification } = await import('@/lib/ai/project-modifier');
+      
+      // For now, return a placeholder response
+      // In production, this would load the project files and apply modifications
+      return {
+        name: "project_modification",
+        content: `✅ Modification request received!\n\n**Instruction**: ${instruction}\n\n⚠️ This feature is under development. Soon you'll be able to:\n- Add new features to existing projects\n- Modify existing code\n- Remove unwanted features\n- Refactor code structure\n\nStay tuned!`,
+        metadata: {
+          instruction,
+        },
+        modelMessage: {
+          role: "system",
+          content: `Project modification request: ${instruction}`,
+        },
+      };
+    },
+  },
   project_generation: {
     description: "Generates a complete full-stack web project from a natural language description.",
     matches(message) {
