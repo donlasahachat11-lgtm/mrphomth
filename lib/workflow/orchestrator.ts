@@ -13,6 +13,7 @@ import { agent7Monitor } from '../agents/agent7-monitoring'
 import { createClient } from '@supabase/supabase-js'
 import { workflowEvents } from './events'
 import { ProjectManager } from '../file-manager/project-manager'
+import { trackWorkflow, captureException, addBreadcrumb } from '../monitoring/sentry'
 
 export interface WorkflowRequest {
   userId: string
@@ -91,8 +92,15 @@ export class WorkflowOrchestrator {
   async execute(prompt: string, options?: WorkflowRequest['options']): Promise<WorkflowState> {
     const startTime = Date.now()
     
+    // Start Sentry transaction for workflow tracking
+    const sentryTransaction = trackWorkflow(this.state.id, this.state.userId)
+    
     try {
       console.log('[Workflow] Starting workflow:', this.state.id)
+      addBreadcrumb('Workflow started', 'workflow', 'info', {
+        workflowId: this.state.id,
+        projectName: this.state.projectName,
+      })
       
       // Save initial state
       await this.saveState()
@@ -161,6 +169,13 @@ export class WorkflowOrchestrator {
         duration
       })
       
+      // Finish Sentry transaction
+      addBreadcrumb('Workflow completed successfully', 'workflow', 'info', {
+        workflowId: this.state.id,
+        duration,
+      })
+      sentryTransaction.finish('success')
+      
       return this.state
       
     } catch (error) {
@@ -184,6 +199,24 @@ export class WorkflowOrchestrator {
         results: this.state.results,
         duration
       })
+      
+      // Capture error in Sentry
+      captureException(error, {
+        tags: {
+          workflowId: this.state.id,
+          userId: this.state.userId,
+          step: String(this.state.currentStep),
+        },
+        extra: {
+          projectName: this.state.projectName,
+          prompt: this.state.results.analysis,
+          duration,
+        },
+        level: 'error',
+      })
+      
+      // Finish Sentry transaction with error
+      sentryTransaction.finish('error', error instanceof Error ? error : new Error(String(error)))
       
       throw error
     }
