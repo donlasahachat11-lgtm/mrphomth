@@ -13,6 +13,7 @@ import {
   Edit
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import AddRateLimitForm from './components/AddRateLimitForm'
 
 interface RateLimitOverride {
   id: string
@@ -145,7 +146,7 @@ export default function RateLimitsPage() {
           <p className="text-sm text-gray-600 mt-1">จัดการ Rate Limit Overrides สำหรับผู้ใช้เฉพาะ</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={loadRateLimitOverrides} variant="outline">
+          <Button onClick={loadOverrides} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             รีเฟรช
           </Button>
@@ -339,6 +340,14 @@ export default function RateLimitsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Add Rate Limit Form Modal */}
+      {showAddForm && (
+        <AddRateLimitForm
+          onClose={() => setShowAddForm(false)}
+          onSuccess={loadOverrides}
+        />
       )}
     </div>
   )
