@@ -228,10 +228,10 @@ async function getMetrics(
     result.recommendations.push('✅ Error rate is normal')
   }
   
-  if (result.metrics.users.active < result.metrics.users.total * 0.2) {
+  if (result.metrics.users && result.metrics.users.active < result.metrics.users.total * 0.2) {
     result.recommendations.push('⚠️ Low user engagement')
     result.recommendations.push('Consider user retention strategies')
-  } else {
+  } else if (result.metrics.users) {
     result.recommendations.push('✅ Good user engagement')
   }
 }

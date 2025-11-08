@@ -264,5 +264,8 @@ export async function exampleUsage() {
     maxTokens: 1000
   })
   
-  console.log(response3.choices[0].message.content)
+  // Type guard for ChatCompletion response
+  if ('choices' in response3) {
+    console.log(response3.choices[0].message.content)
+  }
 }

@@ -185,6 +185,11 @@ Generate ONLY the test code, no explanations.`
     maxTokens: 2000
   })
   
+  // Type guard to ensure we have a ChatCompletion response
+  if (!response || typeof response === 'object' && 'choices' in response === false) {
+    throw new Error('Invalid response from AI')
+  }
+  
   let testCode = response.choices[0].message.content || ''
   
   // Extract code from markdown if present

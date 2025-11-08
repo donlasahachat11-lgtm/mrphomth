@@ -362,11 +362,11 @@ export class WorkflowOrchestrator {
           current_step: this.state.currentStep,
           total_steps: this.state.totalSteps,
           progress: this.state.progress,
-          results: this.state.results,
+          results: this.state.results as any,
           errors: this.state.errors,
           created_at: this.state.createdAt,
           updated_at: this.state.updatedAt
-        })
+        } as any)
       
       if (error) {
         console.error('[Workflow] Error saving state:', error)

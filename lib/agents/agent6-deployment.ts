@@ -3,7 +3,7 @@
  * Handles deployment to Vercel, environment setup, and domain configuration
  */
 
-import { exec } from 'child_process'
+import { exec, spawn } from 'child_process'
 import { promisify } from 'util'
 import { writeFile, readFile } from 'fs/promises'
 import { join } from 'path'
@@ -167,13 +167,26 @@ async function setupEnvironment(
     // Also set in Vercel if deployed
     for (const [key, value] of Object.entries(envVars)) {
       try {
-        await execAsync(
-          `vercel env add ${key} ${task.environment || 'production'}`,
-          {
+        // Use spawn for interactive input instead of exec
+        await new Promise<void>((resolve, reject) => {
+          const proc = spawn('vercel', ['env', 'add', key, task.environment || 'production'], {
             cwd: projectPath,
-            input: value
-          }
-        )
+            stdio: ['pipe', 'pipe', 'pipe']
+          })
+          
+          proc.stdin.write(value)
+          proc.stdin.end()
+          
+          proc.on('close', (code) => {
+            if (code === 0) {
+              resolve()
+            } else {
+              reject(new Error(`Process exited with code ${code}`))
+            }
+          })
+          
+          proc.on('error', reject)
+        })
         result.logs?.push(`Set ${key} in Vercel`)
       } catch (error) {
         result.logs?.push(`Could not set ${key} in Vercel (may already exist)`)
