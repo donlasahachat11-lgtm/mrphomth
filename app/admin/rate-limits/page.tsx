@@ -146,7 +146,7 @@ export default function RateLimitsPage() {
           <p className="text-sm text-gray-600 mt-1">จัดการ Rate Limit Overrides สำหรับผู้ใช้เฉพาะ</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={loadOverrides} variant="outline">
+          <Button onClick={loadRateLimitOverrides} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             รีเฟรช
           </Button>
@@ -319,34 +319,11 @@ export default function RateLimitsPage() {
         </div>
       </div>
 
-      {/* Add Form Notice */}
-      {showAddForm && (
-        <div className="rounded-lg border bg-blue-50 border-blue-200 p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-lg font-semibold text-blue-900">การเพิ่ม Rate Limit Override</h3>
-              <p className="text-sm text-blue-700 mt-2">
-                ฟีเจอร์นี้ต้องการ API endpoint เพิ่มเติม กรุณาใช้ Supabase Dashboard เพื่อเพิ่ม override ใหม่ในตาราง <code className="bg-blue-100 px-1 rounded">rate_limit_overrides</code>
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddForm(false)}
-                className="mt-4"
-              >
-                ปิด
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Add Rate Limit Form Modal */}
       {showAddForm && (
         <AddRateLimitForm
           onClose={() => setShowAddForm(false)}
-          onSuccess={loadOverrides}
+          onSuccess={loadRateLimitOverrides}
         />
       )}
     </div>
