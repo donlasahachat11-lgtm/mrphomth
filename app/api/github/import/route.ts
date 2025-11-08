@@ -1,19 +1,18 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 import { GitHubIntegration } from '@/lib/github-integration';
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+export const dynamic = 'force-dynamic'
 
 // POST /api/github/import - Import files from GitHub repository
 export async function POST(request: Request) {
