@@ -21,15 +21,23 @@ npm install
 ```
 
 ### 3. Setup Environment Variables
+
+⚠️ **IMPORTANT:** Environment variables are NOT in the repository for security.
+
+**Read this first:** [ENV_SETUP_GUIDE.md](ENV_SETUP_GUIDE.md)
+
+**Quick Setup:**
 ```bash
 cp .env.example .env.local
 ```
 
-**Required Variables (already set in Vercel):**
-- `NEXT_PUBLIC_SUPABASE_URL` = https://xcwkwdoxrbzzpwmlqswr.supabase.co
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (check Vercel dashboard)
+**You MUST ask the user for:**
+- `NEXT_PUBLIC_SUPABASE_URL` (from Supabase Dashboard)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (from Supabase Dashboard)
 
-**Note:** Vanchin AI keys are hardcoded in `/lib/ai/vanchin-client.ts`
+**See:** [ENV_SETUP_GUIDE.md](ENV_SETUP_GUIDE.md) for detailed instructions
+
+**Note:** Vanchin AI keys (19 models) are hardcoded in `/lib/ai/vanchin-client.ts`
 
 ### 4. Run Development Server
 ```bash
@@ -489,9 +497,12 @@ Before starting work, verify:
 
 - [ ] Repository cloned successfully
 - [ ] Dependencies installed (`npm install`)
-- [ ] `.env.local` configured
+- [ ] **Read ENV_SETUP_GUIDE.md** (environment setup)
+- [ ] **Asked user for Supabase credentials**
+- [ ] `.env.local` configured with correct values
 - [ ] Development server runs (`npm run dev`)
 - [ ] Can access http://localhost:3000
+- [ ] Can login/signup (tests Supabase connection)
 - [ ] Read HANDOVER.md (this file)
 - [ ] Read AI_MODEL_ALLOCATION.md
 - [ ] Understand project structure
