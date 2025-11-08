@@ -5,8 +5,9 @@
 
 import { exec, spawn } from 'child_process'
 import { promisify } from 'util'
-import { writeFile, readFile } from 'fs/promises'
+import { writeFile, readFile, readdir, stat } from 'fs/promises'
 import { join } from 'path'
+import { createVercelClient } from '../deployment/vercel-client'
 
 const execAsync = promisify(exec)
 
@@ -91,55 +92,103 @@ async function deployToVercel(
   request: Agent6Request,
   result: Agent6Result
 ): Promise<void> {
-  const { projectPath, task } = request
+  const { projectPath, projectId, task } = request
   const isProd = task.environment === 'production'
   
   try {
-    result.logs?.push('Installing Vercel CLI...')
+    result.logs?.push('Initializing Vercel deployment...')
     
-    // Check if vercel is installed
-    try {
-      await execAsync('vercel --version', { cwd: projectPath })
-    } catch {
-      // Install vercel CLI
-      await execAsync('pnpm add -g vercel', { cwd: projectPath })
+    // Create Vercel client
+    const vercel = createVercelClient()
+    
+    // Verify token
+    const isValid = await vercel.verifyToken()
+    if (!isValid) {
+      throw new Error('Invalid Vercel token. Please set VERCEL_TOKEN environment variable.')
     }
     
-    result.logs?.push('Deploying to Vercel...')
+    result.logs?.push('Creating Vercel project...')
     
-    // Deploy command
-    const deployCmd = isProd ? 'vercel --prod' : 'vercel'
+    // Create or get project
+    const projectName = projectId.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+    await vercel.createProject(projectName, 'nextjs')
     
-    const { stdout, stderr } = await execAsync(deployCmd, {
-      cwd: projectPath,
-      env: {
-        ...process.env,
-        VERCEL_ORG_ID: process.env.VERCEL_ORG_ID,
-        VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID
-      }
-    })
+    result.logs?.push('Setting environment variables...')
     
-    // Extract deployment URL from output
-    const urlMatch = stdout.match(/https:\/\/[^\s]+/)
-    if (urlMatch) {
-      result.deploymentUrl = urlMatch[0]
+    // Set environment variables
+    if (task.envVars) {
+      await vercel.setEnvironmentVariables(projectName, task.envVars)
     }
     
+    result.logs?.push('Collecting project files...')
+    
+    // Collect all files for deployment
+    const files = await collectProjectFiles(projectPath)
+    
+    result.logs?.push(`Uploading ${files.length} files to Vercel...`)
+    
+    // Deploy to Vercel
+    const deployment = await vercel.deployFromFiles(projectName, files)
+    
+    result.deploymentId = deployment.id
+    result.deploymentUrl = `https://${deployment.url}`
+    
+    result.logs?.push('Waiting for deployment to complete...')
+    
+    // Wait for deployment to be ready
+    const finalDeployment = await vercel.waitForDeployment(deployment.id)
+    
+    result.deploymentUrl = `https://${finalDeployment.url}`
     result.logs?.push('Deployment successful!')
     result.logs?.push(`URL: ${result.deploymentUrl}`)
     
     result.recommendations.push(`Visit your deployment: ${result.deploymentUrl}`)
     result.recommendations.push('Check deployment logs in Vercel dashboard')
+    result.recommendations.push('Configure custom domain if needed')
     
   } catch (error: any) {
     console.error('[Agent 6] Deployment error:', error)
     result.logs?.push('Deployment failed')
     result.logs?.push(error.message)
     
-    result.recommendations.push('Check Vercel CLI is installed: pnpm add -g vercel')
     result.recommendations.push('Ensure VERCEL_TOKEN is set in environment')
-    result.recommendations.push('Run: vercel login')
+    result.recommendations.push('Check project files are valid')
+    result.recommendations.push('Try deploying manually via Vercel dashboard')
   }
+}
+
+/**
+ * Collect all project files for deployment
+ */
+async function collectProjectFiles(projectPath: string): Promise<{ path: string; content: string | Buffer }[]> {
+  const files: { path: string; content: string | Buffer }[] = []
+  
+  async function walk(dir: string, baseDir: string = projectPath) {
+    const entries = await readdir(dir, { withFileTypes: true })
+    
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name)
+      const relativePath = fullPath.replace(baseDir + '/', '')
+      
+      // Skip node_modules, .next, .git
+      if (entry.name === 'node_modules' || entry.name === '.next' || entry.name === '.git') {
+        continue
+      }
+      
+      if (entry.isDirectory()) {
+        await walk(fullPath, baseDir)
+      } else {
+        const content = await readFile(fullPath)
+        files.push({
+          path: relativePath,
+          content
+        })
+      }
+    }
+  }
+  
+  await walk(projectPath)
+  return files
 }
 
 /**
