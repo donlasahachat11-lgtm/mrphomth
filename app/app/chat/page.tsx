@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { ModernChatInterfaceV2, Message } from '@/components/chat/modern-chat-interface-v2'
-import { AIModeSelectorV2 } from '@/components/chat/ai-mode-selector-v2'
+import { AIModeSelectorV3 } from '@/components/chat/ai-mode-selector-v3'
 import { WorkspaceView } from '@/components/workspace/workspace-view'
 import { useAIMode } from '@/lib/hooks/use-ai-mode'
 import { AIMode } from '@/lib/types/ai-mode'
@@ -390,7 +390,7 @@ API_KEY=your_api_key
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header with AI Mode Selector */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-xl shadow-sm">
-          <AIModeSelectorV2 value={mode} onChange={setMode} />
+          <AIModeSelectorV3 value={mode} onChange={setMode} />
           
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-600 max-w-md truncate">
