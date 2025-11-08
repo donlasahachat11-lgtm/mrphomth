@@ -80,18 +80,22 @@ export function captureMessage(
 }
 
 /**
- * Start a transaction for performance monitoring
+ * Start a span for performance monitoring
  */
-export function startTransaction(
+export function startSpan<T>(
   name: string,
   op: string,
-  data?: Record<string, unknown>
-) {
-  return Sentry.startTransaction({
-    name,
-    op,
-    data,
-  })
+  callback: () => T | Promise<T>,
+  data?: Record<string, string | number | boolean>
+): T | Promise<T> {
+  return Sentry.startSpan(
+    {
+      name,
+      op,
+      attributes: data as Record<string, string | number | boolean | undefined>,
+    },
+    callback
+  )
 }
 
 /**
@@ -102,20 +106,8 @@ export function trackAgentExecution(
   agentNumber: number,
   projectId: string
 ) {
-  const transaction = Sentry.startTransaction({
-    name: `Agent ${agentNumber}: ${agentName}`,
-    op: 'agent.execution',
-    data: {
-      agentName,
-      agentNumber,
-      projectId,
-    },
-  })
-
   return {
     finish: (status: 'success' | 'error', error?: Error) => {
-      transaction.setStatus(status === 'success' ? 'ok' : 'unknown_error')
-      
       if (error) {
         Sentry.captureException(error, {
           tags: {
@@ -125,8 +117,6 @@ export function trackAgentExecution(
           },
         })
       }
-
-      transaction.finish()
     },
   }
 }
@@ -135,34 +125,33 @@ export function trackAgentExecution(
  * Track workflow execution
  */
 export function trackWorkflow(workflowId: string, userId: string) {
-  const transaction = Sentry.startTransaction({
-    name: 'Workflow Execution',
-    op: 'workflow.execute',
-    data: {
-      workflowId,
-      userId,
-    },
-  })
+  let currentStep = 0
+  let currentStepName = ''
 
   return {
     setStep: (step: number, stepName: string) => {
-      transaction.setData('currentStep', step)
-      transaction.setData('currentStepName', stepName)
+      currentStep = step
+      currentStepName = stepName
+      addBreadcrumb(`Step ${step}: ${stepName}`, 'workflow', 'info', {
+        workflowId,
+        step,
+        stepName,
+      })
     },
     
     finish: (status: 'success' | 'error', error?: Error) => {
-      transaction.setStatus(status === 'success' ? 'ok' : 'unknown_error')
-      
       if (error) {
         Sentry.captureException(error, {
           tags: {
             workflowId,
             userId,
+            step: String(currentStep),
+          },
+          extra: {
+            currentStepName,
           },
         })
       }
-
-      transaction.finish()
     },
   }
 }
