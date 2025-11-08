@@ -361,21 +361,7 @@ const toolRegistry: Record<ToolName, ToolDefinition> = {
   },
 };
 
-function getGatewayUrl() {
-  const url = process.env.AI_GATEWAY_URL ?? "http://localhost:8000";
-  if (!url) {
-    throw new Error("AI_GATEWAY_URL is not configured");
-  }
-  return url.replace(/\/$/, "");
-}
-
-function normalizeProvider(provider?: string): "openai" | "anthropic" {
-  const value = (provider ?? "openai").toLowerCase();
-  if (["claude", "anthropic"].includes(value)) {
-    return "anthropic";
-  }
-  return "openai";
-}
+// Removed getGatewayUrl and normalizeProvider - using Vanchin AI directly
 
 function encodeEvent(payload: Record<string, unknown>): Uint8Array {
   return encoder.encode(`data: ${JSON.stringify(payload)}\n\n`);
@@ -540,38 +526,7 @@ async function executeTool(
   return definition.execute(invocation.input, context);
 }
 
-function extractProviderText(provider: "openai" | "anthropic", payload: any): string {
-  if (provider === "anthropic") {
-    const segments = Array.isArray(payload?.content) ? payload.content : [];
-    const textSegments = segments
-      .map((segment: any) => {
-        if (typeof segment?.text === "string") return segment.text;
-        if (Array.isArray(segment?.content)) {
-          return segment.content.map((entry: any) => entry?.text ?? "").join("");
-        }
-        return typeof segment === "string" ? segment : "";
-      })
-      .filter(Boolean);
-    return textSegments.join(" ").trim();
-  }
-
-  const choices = Array.isArray(payload?.choices) ? payload.choices : [];
-  if (choices.length > 0) {
-    const content = choices
-      .map((choice: any) => choice?.message?.content ?? choice?.delta?.content ?? "")
-      .filter(Boolean)
-      .join(" ");
-    if (content) {
-      return content.trim();
-    }
-  }
-
-  if (typeof payload?.content === "string") {
-    return payload.content.trim();
-  }
-
-  return "";
-}
+// Removed extractProviderText - using Vanchin AI directly
 
 function buildStreamResponse(events: Record<string, unknown>[]) {
   return new Response(
@@ -606,7 +561,6 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as ChatRequestBody;
   const messages = Array.isArray(body.messages) ? body.messages : [];
-  const provider = normalizeProvider(body.provider);
   const wantStream = body.stream !== false;
 
   const explicitTool = detectExplicitTool(body.tool ?? null);
@@ -634,43 +588,37 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const gatewayUrl = getGatewayUrl();
-  const gatewayApiKey = process.env.AI_GATEWAY_API_KEY;
-
-  const upstreamResponse = await fetch(`${gatewayUrl}/api/v1/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(gatewayApiKey ? { "X-API-Key": gatewayApiKey } : {}),
-      "X-User-Id": user.id,
-    },
-    body: JSON.stringify({
-      ...body,
-      provider,
+  // Use Vanchin AI directly instead of AI Gateway
+  const { createVanchinClient, getNextModel } = await import('@/lib/ai/vanchin-client');
+  
+  let finalText = '';
+  
+  try {
+    const { client, endpoint } = getNextModel();
+    
+    const completion = await client.chat.completions.create({
+      model: endpoint,
+      messages: augmentedMessages as any,
+      temperature: 0.7,
+      max_tokens: 2000,
       stream: false,
-      messages: augmentedMessages,
-    }),
-  });
-
-  if (!upstreamResponse.ok) {
-    const errorText = await upstreamResponse.text();
-    const detail = errorText || "Unexpected error from AI gateway";
+    });
+    
+    finalText = completion.choices[0]?.message?.content?.trim() || '';
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'AI request failed';
     if (wantStream) {
       return buildStreamResponse([
-        { type: "error", error: detail },
-        { type: "done" },
+        { type: 'error', error: message },
+        { type: 'done' },
       ]);
     }
-    return NextResponse.json({ error: detail }, { status: upstreamResponse.status });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const providerPayload = await upstreamResponse.json();
-  const finalText = extractProviderText(provider, providerPayload);
 
   if (!wantStream) {
     return NextResponse.json({
       content: finalText,
-      provider,
       tool: toolResult
         ? {
             name: toolResult.name,
